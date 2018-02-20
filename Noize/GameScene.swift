@@ -15,6 +15,8 @@ class GameScene: SKScene {
     
     private var label : SKLabelNode?
     private var spinnyNode : SKShapeNode?
+	private var mic: AKMicrophoneTracker?
+	@IBOutlet private var mic_label: SKLabelNode?
     
     override func didMove(to view: SKView) {
         
@@ -37,6 +39,17 @@ class GameScene: SKScene {
                                               SKAction.fadeOut(withDuration: 0.5),
                                               SKAction.removeFromParent()]))
         }
+		
+		self.mic = AKMicrophoneTracker()
+		self.mic_label = SKLabelNode(fontNamed: "Helvetica Neue")
+		self.mic_label?.fontSize = 30
+		self.mic_label?.horizontalAlignmentMode = SKLabelHorizontalAlignmentMode.left
+//		print(UIApplication.shared.keyWindow!.safeAreaInsets.left, self.view!.safeAreaInsets.bottom)
+		self.mic_label?.position = CGPoint(x: self.view!.safeAreaInsets.left+self.frame.minX+100,
+										   y: self.view!.safeAreaInsets.bottom+self.frame.minY)
+		self.mic_label?.fontColor = SKColor.white
+		self.mic_label?.text = "Mic"
+		self.addChild(self.mic_label!)
     }
     
     
@@ -46,6 +59,10 @@ class GameScene: SKScene {
             n.strokeColor = SKColor.green
             self.addChild(n)
         }
+		
+		self.mic?.start()
+		print(self.view!.safeAreaInsets.left, self.view!.safeAreaInsets.bottom)
+
     }
     
     func touchMoved(toPoint pos : CGPoint) {
@@ -62,6 +79,7 @@ class GameScene: SKScene {
             n.strokeColor = SKColor.red
             self.addChild(n)
         }
+		self.mic?.stop()
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -87,5 +105,9 @@ class GameScene: SKScene {
     
     override func update(_ currentTime: TimeInterval) {
         // Called before each frame is rendered
+		
+		if let mic = self.mic{
+			self.mic_label?.text = String(format: "freq: %.3f, amp: %.3f", mic.frequency, mic.amplitude)
+		}
     }
 }

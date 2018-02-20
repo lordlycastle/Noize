@@ -16,15 +16,6 @@ class GameViewController: UIViewController {
         super.viewDidLoad()
         
         if let view = self.view as! SKView? {
-            // Load the SKScene from 'GameScene.sks'
-            if let scene = SKScene(fileNamed: "GameScene") {
-                // Set the scale mode to scale to fit the window
-                scene.scaleMode = .aspectFill
-                
-                // Present the scene
-                view.presentScene(scene)
-            }
-            
             view.ignoresSiblingOrder = true
             
             view.showsFPS = true
@@ -52,4 +43,24 @@ class GameViewController: UIViewController {
     override var prefersStatusBarHidden: Bool {
         return true
     }
+	
+	override func prefersHomeIndicatorAutoHidden() -> Bool {
+		return true
+	}
+	
+	override func viewWillLayoutSubviews() {
+		super.viewWillLayoutSubviews()
+		// Load the SKScene from 'GameScene.sks'
+		if let scene = SKScene(fileNamed: "GameScene"),
+			let view = self.view as! SKView? {
+			// Set the scale mode to scale to fit the window
+			scene.scaleMode = .aspectFill
+			print(scene.size)
+			
+			
+			// Present the scene
+			view.presentScene(scene)
+			
+		}
+	}
 }
