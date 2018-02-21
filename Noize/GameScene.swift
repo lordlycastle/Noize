@@ -16,7 +16,13 @@ class GameScene: SKScene {
     private var label : SKLabelNode?
     private var spinnyNode : SKShapeNode?
 	private var mic: AKMicrophoneTracker?
-	@IBOutlet private var mic_label: SKLabelNode?
+	private var mic_label: SKLabelNode?
+	private var player: SKSpriteNode?
+	private var cam: SKCameraNode?
+	private var cam_move_speed: CGFloat = 10
+	private var cam_player_shift: CGFloat?
+	private var player_spawn_position: CGPoint?
+	
     
     override func didMove(to view: SKView) {
         
@@ -41,15 +47,22 @@ class GameScene: SKScene {
         }
 		
 		self.mic = AKMicrophoneTracker()
-		self.mic_label = SKLabelNode(fontNamed: "Helvetica Neue")
-		self.mic_label?.fontSize = 30
-		self.mic_label?.horizontalAlignmentMode = SKLabelHorizontalAlignmentMode.left
-//		print(UIApplication.shared.keyWindow!.safeAreaInsets.left, self.view!.safeAreaInsets.bottom)
-		self.mic_label?.position = CGPoint(x: self.view!.safeAreaInsets.left+self.frame.minX+100,
-										   y: self.view!.safeAreaInsets.bottom+self.frame.minY)
-		self.mic_label?.fontColor = SKColor.white
-		self.mic_label?.text = "Mic"
-		self.addChild(self.mic_label!)
+//		self.mic_label = SKLabelNode(fontNamed: "Helvetica Neue")
+//		self.mic_label?.fontSize = 30
+//		self.mic_label?.horizontalAlignmentMode = SKLabelHorizontalAlignmentMode.left
+////		print(UIApplication.shared.keyWindow!.safeAreaInsets.left, self.view!.safeAreaInsets.bottom)
+//		self.mic_label?.position = CGPoint(x: self.view!.safeAreaInsets.left+self.frame.minX,
+//										   y: self.view!.safeAreaInsets.bottom+self.frame.minY)
+//		self.mic_label?.fontColor = SKColor.white
+//		self.mic_label?.text = "Mic"
+//		self.mic_label?.zPosition = 1000
+//		self.addChild(self.mic_label!)
+		
+		self.player = childNode(withName: "Player") as? SKSpriteNode
+		self.player_spawn_position = self.player?.position
+		self.cam = childNode(withName: "Player Cam") as? SKCameraNode
+		self.mic_label = self.cam?.childNode(withName: "Freq and Amp") as? SKLabelNode
+		self.cam_player_shift = abs(self.player!.position.x-self.cam!.position.x)
     }
     
     
@@ -61,7 +74,6 @@ class GameScene: SKScene {
         }
 		
 		self.mic?.start()
-		print(self.view!.safeAreaInsets.left, self.view!.safeAreaInsets.bottom)
 
     }
     
@@ -79,7 +91,7 @@ class GameScene: SKScene {
             n.strokeColor = SKColor.red
             self.addChild(n)
         }
-		self.mic?.stop()
+//		self.mic?.stop()
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -109,5 +121,26 @@ class GameScene: SKScene {
 		if let mic = self.mic{
 			self.mic_label?.text = String(format: "freq: %.3f, amp: %.3f", mic.frequency, mic.amplitude)
 		}
+		
+		self.player?.position.x = self.player!.position.x
+								+ self.cam_move_speed * getMovementFromMic(amplitude: self.mic!.amplitude)
+		self.cam?.position.x = self.player!.position.x + self.cam_player_shift!
+		
+		if let player = self.player, let cam = self.cam {
+			if !cam.contains(player) {
+				player.position = self.player_spawn_position!
+				player.physicsBody?.velocity = CGVector()
+			}
+		}
     }
+	
+	func getMovementFromMic(amplitude: Double, min: Double = 0.1, max: Double = 0.8) -> CGFloat {
+		if amplitude - min < 0 {
+			return CGFloat(0)
+		}else {
+			var adjusted_amplitude = amplitude - min
+			adjusted_amplitude = adjusted_amplitude / (max - min)
+			return CGFloat(adjusted_amplitude)
+		}
+	}
 }
