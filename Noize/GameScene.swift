@@ -11,6 +11,7 @@ import GameplayKit
 import AudioKit
 //import UIKit
 
+
 class GameScene: SKScene, SKPhysicsContactDelegate {
 	
 	private var label : SKLabelNode?
@@ -43,6 +44,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 	private var player_category_mask: UInt32 = 0x1 << 0
 	private var platform_category_mask: UInt32 = 0x1 << 1
 	private var spikes_category_mask: UInt32 = 0x1 << 2
+	private var rainbow_mode = true
 	
 	private var frame_count: Int = 0
 	
@@ -70,18 +72,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 															  SKAction.removeFromParent()])]))
 		}
 		
-		self.mic = AKMicrophoneTracker()
-		self.mic_label = self.cam?.childNode(withName: "Freq and Amp") as? SKLabelNode
-		
 		self.player = childNode(withName: "Player") as? SKSpriteNode
 		self.player?.physicsBody?.categoryBitMask = self.player_category_mask
 		self.player_spawn_position = self.player?.position
 		self.player?.isHidden = true
 		
-		self.physicsWorld.contactDelegate = self
-		
-		self.cam = childNode(withName: "Player Cam") as? SKCameraNode
 		self.cam_player_shift = abs(self.player!.position.x-self.cam!.position.x)
+		self.cam = childNode(withName: "Player Cam") as? SKCameraNode
+		
+		self.mic = AKMicrophoneTracker()
+		self.mic_label = self.cam?.childNode(withName: "Freq and Amp") as? SKLabelNode
+		
+		self.physicsWorld.contactDelegate = self
 		
 		
 		var i = 0
@@ -192,11 +194,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
 		if let track = self.spinnyNode?.copy() as? SKShapeNode {
 			track.position = self.player!.position
-			track.strokeColor = SKColor.yellow
+			track.strokeColor = hexStringToSKColor(hex: colors[frame_count])
 			self.addChild(track)
 		}
-		frame_count += 1
-		frame_count = frame_count % 60
+		if rainbow_mode {
+			frame_count += 1
+			frame_count = frame_count % colors.count
+		}
 	}
 	
 	func getMovementFromMic(amplitude: Double, min: Double = 0.1, max: Double = 0.8) -> CGFloat {
