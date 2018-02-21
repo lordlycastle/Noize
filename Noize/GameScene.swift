@@ -11,7 +11,7 @@ import GameplayKit
 import AudioKit
 //import UIKit
 
-class GameScene: SKScene {
+class GameScene: SKScene, SKPhysicsContactDelegate {
     
     private var label : SKLabelNode?
     private var spinnyNode : SKShapeNode?
@@ -22,6 +22,20 @@ class GameScene: SKScene {
 	private var cam_move_speed: CGFloat = 10
 	private var cam_player_shift: CGFloat?
 	private var player_spawn_position: CGPoint?
+	private var player_initial_velocity = CGVector(dx: 0, dy: -100)
+	private var player_category_mask: UInt32 = 0x1 << 0
+	private var platform_category_mask: UInt32 = 0x1 << 1
+	private var player_jump_force = CGVector(dx: 0, dy: 750)
+	private var is_mic_on: Bool = false
+	private var mic_amplitude: Double {
+		get {
+			if is_mic_on {
+				return self.mic!.amplitude
+			}else {
+				return 0
+			}
+		}
+	}
 	
     
     override func didMove(to view: SKView) {
@@ -47,22 +61,17 @@ class GameScene: SKScene {
         }
 		
 		self.mic = AKMicrophoneTracker()
-//		self.mic_label = SKLabelNode(fontNamed: "Helvetica Neue")
-//		self.mic_label?.fontSize = 30
-//		self.mic_label?.horizontalAlignmentMode = SKLabelHorizontalAlignmentMode.left
-////		print(UIApplication.shared.keyWindow!.safeAreaInsets.left, self.view!.safeAreaInsets.bottom)
-//		self.mic_label?.position = CGPoint(x: self.view!.safeAreaInsets.left+self.frame.minX,
-//										   y: self.view!.safeAreaInsets.bottom+self.frame.minY)
-//		self.mic_label?.fontColor = SKColor.white
-//		self.mic_label?.text = "Mic"
-//		self.mic_label?.zPosition = 1000
-//		self.addChild(self.mic_label!)
-		
 		self.player = childNode(withName: "Player") as? SKSpriteNode
+		self.player?.physicsBody?.categoryBitMask = self.player_category_mask
 		self.player_spawn_position = self.player?.position
+//		self.player?.physicsBody?.applyImpulse(self.player_initial_velocity)
+		self.physicsWorld.contactDelegate = self
 		self.cam = childNode(withName: "Player Cam") as? SKCameraNode
 		self.mic_label = self.cam?.childNode(withName: "Freq and Amp") as? SKLabelNode
 		self.cam_player_shift = abs(self.player!.position.x-self.cam!.position.x)
+		self.enumerateChildNodes(withName: "Platform") { (node, _) in
+			node.physicsBody?.categoryBitMask = self.platform_category_mask
+		}
     }
     
     
@@ -73,8 +82,13 @@ class GameScene: SKScene {
             self.addChild(n)
         }
 		
-		self.mic?.start()
-
+		if !self.is_mic_on {
+			self.mic?.start()
+			self.is_mic_on = true
+		}else {
+			self.mic?.stop()
+			self.is_mic_on = false
+		}
     }
     
     func touchMoved(toPoint pos : CGPoint) {
@@ -123,7 +137,7 @@ class GameScene: SKScene {
 		}
 		
 		self.player?.position.x = self.player!.position.x
-								+ self.cam_move_speed * getMovementFromMic(amplitude: self.mic!.amplitude)
+								+ self.cam_move_speed * getMovementFromMic(amplitude: self.mic_amplitude)
 		self.cam?.position.x = self.player!.position.x + self.cam_player_shift!
 		
 		if let player = self.player, let cam = self.cam {
@@ -141,6 +155,22 @@ class GameScene: SKScene {
 			var adjusted_amplitude = amplitude - min
 			adjusted_amplitude = adjusted_amplitude / (max - min)
 			return CGFloat(adjusted_amplitude)
+		}
+	}
+	
+	func didBegin(_ contact: SKPhysicsContact) {
+		let first_node = contact.bodyA.node
+		let second_node = contact.bodyB.node
+		
+		if first_node?.name == "Player" &&
+		   second_node?.name == "Platform" {
+			first_node?.physicsBody?.applyImpulse(self.player_jump_force)
+			
+		}else if first_node?.name == "Platform" &&
+				 second_node?.name == "Player" {
+			first_node?.physicsBody?.applyImpulse(self.player_jump_force)
+			second_node?.physicsBody?.applyImpulse(self.player_jump_force)
+			
 		}
 	}
 }
