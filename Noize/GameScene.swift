@@ -66,7 +66,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 		self.player = childNode(withName: "Player") as? SKSpriteNode
 		self.player?.physicsBody?.categoryBitMask = self.player_category_mask
 		self.player_spawn_position = self.player?.position
-		//		self.player?.physicsBody?.applyImpulse(self.player_initial_velocity)
 		self.physicsWorld.contactDelegate = self
 		self.cam = childNode(withName: "Player Cam") as? SKCameraNode
 		self.mic_label = self.cam?.childNode(withName: "Freq and Amp") as? SKLabelNode
@@ -83,7 +82,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 			i = i+1
 		}
 		print("# of spikes: \(i)")
-		
+		i = 0
+		self.enumerateChildNodes(withName: "Spike") { (node, _) in
+			node.physicsBody?.categoryBitMask = self.spikes_category_mask
+			let spike_position = node.position
+			node.run(SKAction.repeatForever(SKAction.sequence([SKAction.moveBy(x: 0, y: self.size.height/2, duration: 1.0),
+															   SKAction.rotate(byAngle: CGFloat(Double.pi), duration: 0),
+															   SKAction.moveBy(x: 0, y: -self.size.height/2, duration: 1.0),
+															   SKAction.rotate(byAngle: CGFloat(Double.pi), duration: 0),
+															   ])))
+			i = i+1
+		}
+		print("# moving spikes: \(i)")
 	}
 	
 	
@@ -199,13 +209,19 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 													SKAction.resize(byWidth: -player_size.width/2,
 																	height: player_size.height/2,
 																	duration: 0.2)]))
-			}else if body_names.contains(where: {$0 == "Spikes"}) {
+			}else if body_names.contains(where: {$0 == "Spikes" || $0 == "Spike"}) {
 				// Bug in SpriteKit does not let you change nodes's position from this func
 				self.is_player_dead = true
 //				reset_level()
 			}
 			
 		}
+//		else if body_names.contains(where: {$0 == "Spike"}) {
+//			let spike_node = body_names[0] == "Spike" ? contact.bodyB.node : contact.bodyA.node
+//			if body_names.contains(where: {$0 == "Platform"}) {
+//
+//			}
+//		}
 	}
 	
 	func reset_level() {
