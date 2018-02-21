@@ -15,19 +15,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 	
 	private var label : SKLabelNode?
 	private var spinnyNode : SKShapeNode?
+	
 	private var mic: AKMicrophoneTracker?
 	private var mic_label: SKLabelNode?
-	private var player: SKSpriteNode?
-	private var cam: SKCameraNode?
-	private var cam_move_speed: CGFloat = 10
-	private var cam_player_shift: CGFloat?
-	private var player_spawn_position: CGPoint?
-	private var player_initial_velocity = CGVector(dx: 0, dy: -100)
-	private var is_player_dead = false
-	private var player_category_mask: UInt32 = 0x1 << 0
-	private var platform_category_mask: UInt32 = 0x1 << 1
-	private var spikes_category_mask: UInt32 = 0x1 << 2
-	private var player_jump_force = CGVector(dx: 0, dy: 750)
 	private var is_mic_on: Bool = false
 	private var mic_amplitude: Double {
 		get {
@@ -38,6 +28,23 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 			}
 		}
 	}
+	
+	private var cam: SKCameraNode?
+	private var cam_move_speed: CGFloat = 10
+	private var cam_player_shift: CGFloat?
+	
+	private var player: SKSpriteNode?
+	private var player_spawn_position: CGPoint?
+	private var player_initial_velocity = CGVector(dx: 0, dy: -100)
+	private var is_player_dead = false
+	private var player_jump_force = CGVector(dx: 0, dy: 750)
+	
+	
+	private var player_category_mask: UInt32 = 0x1 << 0
+	private var platform_category_mask: UInt32 = 0x1 << 1
+	private var spikes_category_mask: UInt32 = 0x1 << 2
+	
+	private var frame_count: Int = 0
 	
 	
 	override func didMove(to view: SKView) {
@@ -50,26 +57,33 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 		}
 		
 		// Create shape node to use during mouse interaction
-		let w = (self.size.width + self.size.height) * 0.05
+		let w = CGFloat(50)
 		self.spinnyNode = SKShapeNode.init(rectOf: CGSize.init(width: w, height: w), cornerRadius: w * 0.3)
 		
 		if let spinnyNode = self.spinnyNode {
 			spinnyNode.lineWidth = 2.5
 			
 			spinnyNode.run(SKAction.repeatForever(SKAction.rotate(byAngle: CGFloat(Double.pi), duration: 1)))
-			spinnyNode.run(SKAction.sequence([SKAction.wait(forDuration: 0.5),
-											  SKAction.fadeOut(withDuration: 0.5),
-											  SKAction.removeFromParent()]))
+			spinnyNode.run(SKAction.group([SKAction.scale(to: 0, duration: 1),
+										   SKAction.sequence([SKAction.wait(forDuration: 0.5),
+															  SKAction.fadeOut(withDuration: 0.5),
+															  SKAction.removeFromParent()])]))
 		}
 		
 		self.mic = AKMicrophoneTracker()
+		self.mic_label = self.cam?.childNode(withName: "Freq and Amp") as? SKLabelNode
+		
 		self.player = childNode(withName: "Player") as? SKSpriteNode
 		self.player?.physicsBody?.categoryBitMask = self.player_category_mask
 		self.player_spawn_position = self.player?.position
+		self.player?.isHidden = true
+		
 		self.physicsWorld.contactDelegate = self
+		
 		self.cam = childNode(withName: "Player Cam") as? SKCameraNode
-		self.mic_label = self.cam?.childNode(withName: "Freq and Amp") as? SKLabelNode
 		self.cam_player_shift = abs(self.player!.position.x-self.cam!.position.x)
+		
+		
 		var i = 0
 		self.enumerateChildNodes(withName: "Platform") { (node, _) in
 			node.physicsBody?.categoryBitMask = self.platform_category_mask
@@ -85,7 +99,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 		i = 0
 		self.enumerateChildNodes(withName: "Spike") { (node, _) in
 			node.physicsBody?.categoryBitMask = self.spikes_category_mask
-			let spike_position = node.position
 			node.run(SKAction.repeatForever(SKAction.sequence([SKAction.moveBy(x: 0, y: self.size.height/2, duration: 1.0),
 															   SKAction.rotate(byAngle: CGFloat(Double.pi), duration: 0),
 															   SKAction.moveBy(x: 0, y: -self.size.height/2, duration: 1.0),
@@ -153,10 +166,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 	override func update(_ currentTime: TimeInterval) {
 		// Called before each frame is rendered
 		if self.is_player_dead {
+			self.player?.physicsBody?.isDynamic = false
 			self.player?.run(SKAction.move(to: self.player_spawn_position!, duration: 1.0),
 							 completion: {
+								self.player?.physicsBody?.isDynamic = true
 								self.player?.physicsBody?.velocity = CGVector()
 								self.is_player_dead = false
+								
 			})
 		}
 		
@@ -173,6 +189,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 				reset_level()
 			}
 		}
+
+		if let track = self.spinnyNode?.copy() as? SKShapeNode {
+			track.position = self.player!.position
+			track.strokeColor = SKColor.yellow
+			self.addChild(track)
+		}
+		frame_count += 1
+		frame_count = frame_count % 60
 	}
 	
 	func getMovementFromMic(amplitude: Double, min: Double = 0.1, max: Double = 0.8) -> CGFloat {
