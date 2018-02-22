@@ -20,6 +20,8 @@
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>"It uses the camera to track your facial expression to kick  your ass!"</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>"It uses mic to control the player."</string>
 	<key>UILaunchStoryboardName</key>

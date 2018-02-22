@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8F58FA93203F4C1D00B83F12 /* Level1.sks in Resources */ = {isa = PBXBuildFile; fileRef = 8F58FA92203F4C1D00B83F12 /* Level1.sks */; };
+		8F58FA95203F4D1D00B83F12 /* ARControlledGameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F58FA94203F4D1D00B83F12 /* ARControlledGameScene.swift */; };
 		8F637D58203DB0A000AE5FEE /* Level0.sks in Resources */ = {isa = PBXBuildFile; fileRef = 8F637D57203DB0A000AE5FEE /* Level0.sks */; };
 		8F637D5A203DC6E000AE5FEE /* PlayerNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F637D59203DC6E000AE5FEE /* PlayerNode.swift */; };
 		8FAD11B7203E044C00AA2545 /* TrailColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FAD11B6203E044C00AA2545 /* TrailColors.swift */; };
@@ -40,6 +42,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		8F58FA92203F4C1D00B83F12 /* Level1.sks */ = {isa = PBXFileReference; lastKnownFileType = file.sks; name = Level1.sks; path = Scenes/Level1.sks; sourceTree = "<group>"; };
+		8F58FA94203F4D1D00B83F12 /* ARControlledGameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARControlledGameScene.swift; sourceTree = "<group>"; };
 		8F637D57203DB0A000AE5FEE /* Level0.sks */ = {isa = PBXFileReference; lastKnownFileType = file.sks; name = Level0.sks; path = Scenes/Level0.sks; sourceTree = "<group>"; };
 		8F637D59203DC6E000AE5FEE /* PlayerNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerNode.swift; sourceTree = "<group>"; };
 		8FAD11B6203E044C00AA2545 /* TrailColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrailColors.swift; sourceTree = "<group>"; };
@@ -94,9 +98,11 @@
 				8FCB3A47203CA9EC008886FA /* AppDelegate.swift */,
 				8FCB3A49203CA9EC008886FA /* GameScene.sks */,
 				8F637D57203DB0A000AE5FEE /* Level0.sks */,
+				8F58FA92203F4C1D00B83F12 /* Level1.sks */,
 				8F637D59203DC6E000AE5FEE /* PlayerNode.swift */,
 				8FCB3A4B203CA9EC008886FA /* Actions.sks */,
 				8FCB3A4D203CA9EC008886FA /* GameScene.swift */,
+				8F58FA94203F4D1D00B83F12 /* ARControlledGameScene.swift */,
 				8FAD11B6203E044C00AA2545 /* TrailColors.swift */,
 				8FCB3A4F203CA9EC008886FA /* GameViewController.swift */,
 				8FCB3A51203CA9EC008886FA /* Main.storyboard */,
@@ -173,6 +179,7 @@
 				8F637D58203DB0A000AE5FEE /* Level0.sks in Resources */,
 				8FCB3A58203CA9EC008886FA /* LaunchScreen.storyboard in Resources */,
 				8FCB3A4C203CA9EC008886FA /* Actions.sks in Resources */,
+				8F58FA93203F4C1D00B83F12 /* Level1.sks in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -184,6 +191,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8FCB3A4E203CA9EC008886FA /* GameScene.swift in Sources */,
+				8F58FA95203F4D1D00B83F12 /* ARControlledGameScene.swift in Sources */,
 				8FCB3A50203CA9EC008886FA /* GameViewController.swift in Sources */,
 				8FAD11B7203E044C00AA2545 /* TrailColors.swift in Sources */,
 				8F637D5A203DC6E000AE5FEE /* PlayerNode.swift in Sources */,

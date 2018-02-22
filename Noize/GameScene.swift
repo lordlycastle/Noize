@@ -10,17 +10,18 @@ import SpriteKit
 import GameplayKit
 import AudioKit
 //import UIKit
+import ARKit
 
 
-class GameScene: SKScene, SKPhysicsContactDelegate {
+class GameScene: SKScene, SKPhysicsContactDelegate, ARSessionDelegate {
 	
-	private var label : SKLabelNode?
-	private var spinnyNode : SKShapeNode?
+	var label : SKLabelNode?
+	var spinnyNode : SKShapeNode?
 	
-	private var mic: AKMicrophoneTracker?
-	private var mic_label: SKLabelNode?
-	private var is_mic_on: Bool = false
-	private var mic_amplitude: Double {
+	var mic: AKMicrophoneTracker?
+	var mic_label: SKLabelNode?
+	var is_mic_on: Bool = false
+	var mic_amplitude: Double {
 		get {
 			if is_mic_on {
 				return self.mic!.amplitude
@@ -30,23 +31,32 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 		}
 	}
 	
-	private var cam: SKCameraNode?
-	private var cam_move_speed: CGFloat = 10
-	private var cam_player_shift: CGFloat?
+	var cam: SKCameraNode?
+	var cam_move_speed: CGFloat = 10
+	var cam_player_shift: CGFloat?
 	
-	private var player: SKSpriteNode?
-	private var player_spawn_position: CGPoint?
-	private var player_initial_velocity = CGVector(dx: 0, dy: -100)
-	private var is_player_dead = false
-	private var player_jump_force = CGVector(dx: 0, dy: 750)
+	var player: SKSpriteNode?
+	var player_spawn_position: CGPoint?
+	var player_initial_velocity = CGVector(dx: 0, dy: -100)
+	var is_player_dead = false
+	var player_jump_force = CGVector(dx: 0, dy: 750)
 	
 	
-	private var player_category_mask: UInt32 = 0x1 << 0
-	private var platform_category_mask: UInt32 = 0x1 << 1
-	private var spikes_category_mask: UInt32 = 0x1 << 2
-	private var rainbow_mode = true
+	var player_category_mask: UInt32 = 0x1 << 0
+	var platform_category_mask: UInt32 = 0x1 << 1
+	var spikes_category_mask: UInt32 = 0x1 << 2
+	var rainbow_mode = true
 	
-	private var frame_count: Int = 0
+	var frame_count: Int = 0
+	
+	var ar_session: ARSession?
+	var ar_configuration =  ARFaceTrackingConfiguration()
+	var face_anchor: ARFaceAnchor?
+	var is_ar_on: Bool {
+		get {
+			return self.is_mic_on && self.ar_session != nil
+		}
+	}
 	
 	
 	override func didMove(to view: SKView) {
@@ -109,6 +119,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 			i = i+1
 		}
 		print("# moving spikes: \(i)")
+		
+		
+		start_AR()
 	}
 	
 	
@@ -125,6 +138,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 		}else {
 			self.mic?.stop()
 			self.is_mic_on = false
+		}
+		
+		if self.is_ar_on {
+			self.ar_session?.run(self.ar_configuration)
+		} else {
+			self.ar_session?.pause()
 		}
 	}
 	
@@ -169,6 +188,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 	
 	override func update(_ currentTime: TimeInterval) {
 		// Called before each frame is rendered
+		
+		self.checkIfPlayerIsDead()
+		self.updateLabelText()
+		
+		self.movePlayer()
+
+		self.drawTrail()
+		self.updateFrameCount()
+	}
+	
+	func checkIfPlayerIsDead() {
 		if self.is_player_dead {
 			self.player?.physicsBody?.isDynamic = false
 			self.player?.run(SKAction.move(to: self.player_spawn_position!, duration: 1.0),
@@ -180,10 +210,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 			})
 		}
 		
+	}
+	
+	func updateLabelText() {
 		if let mic = self.mic{
 			self.mic_label?.text = String(format: "freq: %.3f, amp: %.3f", mic.frequency, mic.amplitude)
 		}
-		
+	}
+	
+	func movePlayer() {
 		self.player?.position.x = self.player!.position.x
 			+ self.cam_move_speed * getMovementFromMic(amplitude: self.mic_amplitude)
 		self.cam?.position.x = self.player!.position.x + self.cam_player_shift!
@@ -193,12 +228,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 				reset_level()
 			}
 		}
-
+	}
+	
+	func drawTrail() {
 		if let track = self.spinnyNode?.copy() as? SKShapeNode {
 			track.position = self.player!.position
 			track.strokeColor = hexStringToSKColor(hex: colors[frame_count])
 			self.addChild(track)
 		}
+	}
+	
+	func updateFrameCount() {
 		if rainbow_mode {
 			frame_count += 1
 			frame_count = frame_count % colors.count
@@ -255,4 +295,37 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 			player.physicsBody?.velocity = CGVector()
 		}
 	}
+	
+	func start_AR() {
+		guard ARFaceTrackingConfiguration.isSupported else { return }
+		self.ar_session = ARSession()
+		self.ar_session?.delegate = self
+		self.ar_configuration.isLightEstimationEnabled = false
+		self.ar_session?.run(self.ar_configuration, options: [.resetTracking, .removeExistingAnchors])
+	}
+	
+	func session(_ session: ARSession, didUpdate frame: ARFrame) {
+//		if frame.anchors.count == 0 {
+//			self.face_anchor = nil
+//		}
+		
+	}
+	
+	func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
+		for anchor in anchors {
+			guard let faceAnchor = anchor as? ARFaceAnchor else { return }
+			self.face_anchor = faceAnchor
+		}
+	}
+	
+	func session(_ session: ARSession, didRemove anchors: [ARAnchor]) {
+		for anchor in anchors {
+			if anchor == self.face_anchor {
+				print("Removing")
+				self.face_anchor = nil
+			}
+		}
+	}
+	
+	
 }

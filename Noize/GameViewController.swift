@@ -51,7 +51,7 @@ class GameViewController: UIViewController {
 	override func viewWillLayoutSubviews() {
 		super.viewWillLayoutSubviews()
 		// Load the SKScene from 'GameScene.sks'
-		if let scene = SKScene(fileNamed: "Level0"),
+		if let scene = SKScene(fileNamed: "Level1"),
 			let view = self.view as! SKView? {
 			// Set the scale mode to scale to fit the window
 			scene.scaleMode = .aspectFill
