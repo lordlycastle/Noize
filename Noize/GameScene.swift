@@ -75,10 +75,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 		self.player = childNode(withName: "Player") as? SKSpriteNode
 		self.player?.physicsBody?.categoryBitMask = self.player_category_mask
 		self.player_spawn_position = self.player?.position
-		self.player?.isHidden = true
+//		self.player?.isHidden = true
 		
-		self.cam_player_shift = abs(self.player!.position.x-self.cam!.position.x)
 		self.cam = childNode(withName: "Player Cam") as? SKCameraNode
+		self.cam_player_shift = abs(self.player!.position.x-self.cam!.position.x)
 		
 		self.mic = AKMicrophoneTracker()
 		self.mic_label = self.cam?.childNode(withName: "Freq and Amp") as? SKLabelNode
@@ -150,6 +150,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 		}
 		
 		for t in touches { self.touchDown(atPoint: t.location(in: self)) }
+		
+		
 	}
 	
 	override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -244,12 +246,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 			}
 			
 		}
-//		else if body_names.contains(where: {$0 == "Spike"}) {
-//			let spike_node = body_names[0] == "Spike" ? contact.bodyB.node : contact.bodyA.node
-//			if body_names.contains(where: {$0 == "Platform"}) {
-//
-//			}
-//		}
+
 	}
 	
 	func reset_level() {
