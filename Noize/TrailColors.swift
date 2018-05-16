@@ -10,8 +10,8 @@ import SpriteKit
 import UIKit
 import Foundation
 
-let colors: [String] = ["#4c70f0",
-						"#d082dc",
+let colors: [String] = ["#d082dc",
+						"#4c70f0",
 						"#f8b2c6",
 						"#d3a337",
 						"#88fb69",

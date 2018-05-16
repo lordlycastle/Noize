@@ -32,7 +32,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate, ARSessionDelegate {
 	}
 	
 	var cam: SKCameraNode?
-	var cam_move_speed: CGFloat = 10
+	var cam_move_speed: CGFloat = 20
 	var cam_player_shift: CGFloat?
 	
 	var player: SKSpriteNode?

@@ -12,7 +12,8 @@ import ARKit
 
 class ARControlledGameScene: GameScene {
 	
-	var eye_moving_filter: BoxFilter = BoxFilter(withSize: 20)
+	var eye_min = 0.1
+	var eye_max = 0.5
 	var eye_right = 0.0
 	var eye_left = 0.0
 	var eye_current_average: Double {
@@ -25,10 +26,31 @@ class ARControlledGameScene: GameScene {
 		}
 	}
 	
-	var mouth_moving_filter = BoxFilter(withSize: 20)
+	var mouth_min = 0.1
+	var mouth_max = 1
 	var mouth_open = 0.0
 	
-
+	var filter_size = 20
+	var mouth_moving_filter = BoxFilter(withSize: 20)
+	var eye_moving_filter: BoxFilter = BoxFilter(withSize: 20)
+	var forwards_filter = BoxFilter(withSize: 20)
+	var backwards_filter = BoxFilter(withSize: 20)
+	
+	var blendShapes: [ARFaceAnchor.BlendShapeLocation: NSNumber] = [ARFaceAnchor.BlendShapeLocation: NSNumber]()
+	var forward_min = 0.2
+	var forward_max = 0.85
+	var move_forward_modifier: ARFaceAnchor.BlendShapeLocation {
+		get {
+			return .eyeWideRight
+		}
+	}
+	var backward_min = 0.1
+	var backward_max = 0.7
+	var move_back_modifier: ARFaceAnchor.BlendShapeLocation {
+		get {
+			return .mouthSmileRight
+		}
+	}
 	
 	override func didMove(to view: SKView) {
 		super.didMove(to: view)
@@ -36,36 +58,26 @@ class ARControlledGameScene: GameScene {
 		self.mic_label?.numberOfLines = 5
 		self.mic_label?.preferredMaxLayoutWidth = 500
 		
+		self.rainbow_mode = false
+		
 	}
 	
 	override func update(_ currentTime: TimeInterval) {
 		super.update(currentTime)
 		
-//		if let frame = self.ar_session?.currentFrame {
-//			for anchor in frame.anchors {
-//				guard let faceAnchor = anchor as? ARFaceAnchor else { return }
-//	//			self.face_anchor = faceAnchor
-//				print(face_anchor?.geometry.triangleCount)
-//				//			self.update_with_face_anchor(face_anchor: self.face_anchor!)
-//			}
-//		}
 	}
 	
 	override func updateLabelText() {
 		if let face_anchor = self.face_anchor {
-//			if face_anchor.geometry.triangleCount == 0 {  }
-//			print(face_anchor.geometry.triangleCount)
+			
 			self.mouth_open = face_anchor.blendShapes[.mouthClose] as! Double
 			self.eye_right = face_anchor.blendShapes[.eyeWideRight] as! Double
 			self.eye_left = face_anchor.blendShapes[.eyeWideLeft] as! Double
 			let blink_right = face_anchor.blendShapes[.eyeSquintRight] as! Float
 			let blink_left = face_anchor.blendShapes[.eyeSquintLeft] as! Float
-//			let eye_average = (self.eye_left + self.eye_right) / 2
-//			print(eye_average)
-			var text = String(format:"mouth: %.3f,\n eye: %.3f, %.3f,\n squint: %.3f, %.3f",
-							  mouth_open,
-							  self.eye_left, self.eye_right,
-							  blink_left, blink_right
+			let text = String(format:"left: %.3f, right:%.3f",
+							  self.backwards_filter.average,
+							  self.forwards_filter.average
 							  )
 			
 			self.mic_label?.text = text
@@ -80,16 +92,35 @@ class ARControlledGameScene: GameScene {
 	}
 	
 	override func movePlayer() {
-		self.player?.position.x = self.player!.position.x
-			+ self.cam_move_speed * getSpeedModiferFromEyes()
-			- self.cam_move_speed * getSpeedModifierFromMouth()
-		self.cam?.position.x = self.player!.position.x + self.cam_player_shift!
-		
-		if let player = self.player, let cam = self.cam {
-			if !cam.contains(player) {
-				reset_level()
+		if let face_anchor = self.face_anchor {
+			self.blendShapes = face_anchor.blendShapes
+			self.player?.position.x = self.player!.position.x
+				+ self.cam_move_speed * getForwardsModifier()
+//				- self.cam_move_speed * getBackwardsModifier()
+			self.cam?.position.x = self.player!.position.x + self.cam_player_shift!
+			
+			if let player = self.player, let cam = self.cam {
+				if !cam.contains(player) {
+					reset_level()
+				}
 			}
 		}
+	}
+	
+	func getForwardsModifier() -> CGFloat{
+		self.forwards_filter.add(value: self.blendShapes[self.move_forward_modifier] as! Double)
+		let modifier = getShiftedAverage(withAverage: self.forwards_filter.average,
+										 min: self.forward_min,
+										 max: self.forward_max)
+		return CGFloat(modifier)
+	}
+	
+	func getBackwardsModifier() -> CGFloat{
+		self.backwards_filter.add(value: self.blendShapes[self.move_back_modifier] as! Double)
+		let modifier = getShiftedAverage(withAverage: self.backwards_filter.average,
+										 min: self.backward_min,
+										 max: self.backward_max)
+		return CGFloat(modifier)
 	}
 	
 	func getSpeedModiferFromEyes(min: Double = 0.1, max: Double = 0.7) -> CGFloat {
@@ -121,6 +152,30 @@ class ARControlledGameScene: GameScene {
 		if shifted_average < 0 { shifted_average = 0 }
 		return shifted_average / difference
 	}
+	
+	
+	override func touchDown(atPoint pos : CGPoint) {
+		if let n = self.spinnyNode?.copy() as! SKShapeNode? {
+			n.position = pos
+			n.strokeColor = SKColor.green
+			self.addChild(n)
+		}
+		
+		if !self.is_mic_on {
+//			self.mic?.start()
+			self.is_mic_on = true
+		}else {
+//			self.mic?.stop()
+			self.is_mic_on = false
+		}
+		
+		if self.is_ar_on {
+			self.ar_session?.run(self.ar_configuration)
+		} else {
+			self.ar_session?.pause()
+		}
+	}
+	
 	
 
 }
